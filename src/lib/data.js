@@ -13,6 +13,7 @@ export const listenSessions = (cb) => {
 
 export const createSession = (data) => addDoc(collection(db, 'sessions'), {
   ...data,
+  date: data.date || '', // vide tant que Laetitia n'a pas proposé de date
   status: data.status || 'en_attente', // en_attente | confirme | annule | termine
   token: uuidv4(),
   createdAt: serverTimestamp()
@@ -20,6 +21,21 @@ export const createSession = (data) => addDoc(collection(db, 'sessions'), {
 
 export const updateSession = (id, data) => updateDoc(doc(db, 'sessions', id), data)
 export const deleteSession = (id) => deleteDoc(doc(db, 'sessions', id))
+
+// --- EVENEMENTS PERSONNELS (calendrier de Laetitia : RDV persos, indispos...) ---
+export const listenEvents = (cb) => {
+  return onSnapshot(collection(db, 'events'), (snap) =>
+    cb(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+  )
+}
+
+export const createEvent = (data) => addDoc(collection(db, 'events'), {
+  ...data,
+  createdAt: serverTimestamp()
+})
+
+export const updateEvent = (id, data) => updateDoc(doc(db, 'events', id), data)
+export const deleteEvent = (id) => deleteDoc(doc(db, 'events', id))
 
 // --- DEVIS ---
 export const listenDevis = (cb) => {
