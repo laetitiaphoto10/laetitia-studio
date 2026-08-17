@@ -4,6 +4,7 @@ import AdminLayout from './components/Layout/AdminLayout'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Agenda from './pages/Agenda'
+import Calendrier from './pages/Calendrier'
 import Devis from './pages/Devis'
 import Factures from './pages/Factures'
 import Contrats from './pages/Contrats'
@@ -35,6 +36,7 @@ function AppRoutes() {
       >
         <Route index element={<Dashboard />} />
         <Route path="agenda" element={<Agenda />} />
+        <Route path="calendrier" element={<Calendrier />} />
         <Route path="devis" element={<Devis />} />
         <Route path="factures" element={<Factures />} />
         <Route path="contrats" element={<Contrats />} />
