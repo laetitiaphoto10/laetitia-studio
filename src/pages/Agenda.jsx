@@ -36,10 +36,10 @@ export default function Agenda() {
     setProposing(null)
   }
 
-  const mailtoLink = (s) => {
+  const gmailComposeLink = (s) => {
     const subject = encodeURIComponent(`Votre séance ${s.type ? '(' + s.type + ')' : ''} — Studio Laetitia Fey`)
     const body = encodeURIComponent(`Bonjour ${s.clientName},\n\n`)
-    return `mailto:${s.email}?subject=${subject}&body=${body}`
+    return `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(s.email)}&su=${subject}&body=${body}`
   }
 
   return (
@@ -108,7 +108,7 @@ export default function Agenda() {
                   </button>
                 )}
                 {s.email && (
-                  <a href={mailtoLink(s)} className="text-sm text-amber underline">
+                  <a href={gmailComposeLink(s)} target="_blank" rel="noopener noreferrer" className="text-sm text-amber underline">
                     Répondre par email
                   </a>
                 )}
