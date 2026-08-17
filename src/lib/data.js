@@ -37,6 +37,20 @@ export const createEvent = (data) => addDoc(collection(db, 'events'), {
 export const updateEvent = (id, data) => updateDoc(doc(db, 'events', id), data)
 export const deleteEvent = (id) => deleteDoc(doc(db, 'events', id))
 
+// --- PARAMETRES (modèle de contrat de Laetitia, etc.) ---
+export const getSetting = async (key) => {
+  const ref = doc(db, 'settings', key)
+  const snap = await getDoc(ref)
+  return snap.exists() ? snap.data() : null
+}
+
+export const setSetting = (key, data) => setDocMerge(key, data)
+
+async function setDocMerge(key, data) {
+  const { setDoc } = await import('firebase/firestore')
+  return setDoc(doc(db, 'settings', key), data, { merge: true })
+}
+
 // --- DEVIS ---
 export const listenDevis = (cb) => {
   const q = query(collection(db, 'devis'), orderBy('createdAt', 'desc'))
