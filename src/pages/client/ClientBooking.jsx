@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { createSession } from '../../lib/data'
 
+const SESSION_TYPES = ['Grossesse', 'Naissance', 'Mariage', 'Couple', 'Autre']
+
 export default function ClientBooking() {
-  const [form, setForm] = useState({ clientName: '', email: '', phone: '', type: '', date: '', time: '', location: '', notes: '' })
+  const [form, setForm] = useState({ clientName: '', email: '', phone: '', type: '', location: '', notes: '' })
   const [sent, setSent] = useState(false)
 
   const handleSubmit = async (e) => {
@@ -29,7 +31,7 @@ export default function ClientBooking() {
         <div className="filmcard py-10 max-w-md text-center">
           <h1 className="font-display text-2xl mb-2">Demande envoyée</h1>
           <p className="text-charcoal/70">
-            Merci ! Votre demande de séance a bien été transmise à Laetitia. Elle revient vers vous rapidement pour confirmer la date.
+            Merci ! Votre demande de séance a bien été transmise à Laetitia. Elle revient vers vous rapidement pour vous proposer une date.
           </p>
         </div>
       </div>
@@ -51,21 +53,21 @@ export default function ClientBooking() {
           <input placeholder="Téléphone" value={form.phone}
             onChange={e => setForm({ ...form, phone: e.target.value })}
             className="px-3 py-2 rounded border border-border" />
-          <input required placeholder="Type de séance souhaitée" value={form.type}
+          <select required value={form.type}
             onChange={e => setForm({ ...form, type: e.target.value })}
-            className="px-3 py-2 rounded border border-border" />
-          <input required type="date" value={form.date}
-            onChange={e => setForm({ ...form, date: e.target.value })}
-            className="px-3 py-2 rounded border border-border" />
-          <input type="time" value={form.time}
-            onChange={e => setForm({ ...form, time: e.target.value })}
-            className="px-3 py-2 rounded border border-border" />
+            className="px-3 py-2 rounded border border-border bg-white">
+            <option value="" disabled>Type de séance</option>
+            {SESSION_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+          </select>
           <input placeholder="Lieu souhaité" value={form.location}
             onChange={e => setForm({ ...form, location: e.target.value })}
             className="px-3 py-2 rounded border border-border md:col-span-2" />
-          <textarea placeholder="Un mot sur votre projet..." value={form.notes}
+          <textarea placeholder="Un mot sur votre projet, vos disponibilités..." value={form.notes}
             onChange={e => setForm({ ...form, notes: e.target.value })}
             className="px-3 py-2 rounded border border-border md:col-span-2" rows={3} />
+          <p className="text-xs text-charcoal/60 md:col-span-2">
+            Laetitia reviendra vers vous pour vous proposer une date de séance.
+          </p>
           <button type="submit" className="bg-amber text-ink font-medium px-4 py-2.5 rounded md:col-span-2">
             Envoyer ma demande
           </button>
