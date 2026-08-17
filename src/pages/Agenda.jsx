@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { listenSessions, createSession, updateSession, deleteSession } from '../lib/data'
+import { Link } from 'react-router-dom'
+import { listenSessions, createSession, updateSession, deleteSession, listenContrats } from '../lib/data'
 
 const STATUS_LABELS = {
   en_attente: 'En attente',
@@ -12,12 +13,17 @@ const SESSION_TYPES = ['Grossesse', 'Naissance', 'Mariage', 'Couple', 'Autre']
 
 export default function Agenda() {
   const [sessions, setSessions] = useState([])
+  const [contrats, setContrats] = useState([])
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ clientName: '', email: '', type: '', date: '', time: '', location: '', notes: '' })
   const [proposing, setProposing] = useState(null) // id de la session en cours de proposition de date
   const [proposedDate, setProposedDate] = useState({ date: '', time: '' })
 
-  useEffect(() => listenSessions(setSessions), [])
+  useEffect(() => {
+    const u1 = listenSessions(setSessions)
+    const u2 = listenContrats(setContrats)
+    return () => { u1(); u2() }
+  }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -100,6 +106,23 @@ export default function Agenda() {
                   )}
                 </p>
                 {s.notes && <p className="text-xs text-charcoal/50 mt-1">{s.notes}</p>}
+                {(() => {
+                  const linkedContrat = contrats.find(c => c.sessionId === s.id)
+                  if (linkedContrat) {
+                    return (
+                      <p className="text-xs mt-1">
+                        Contrat : <span className={linkedContrat.status === 'signe' ? 'text-green-700' : 'text-amber'}>
+                          {linkedContrat.status === 'signe' ? 'signé' : 'en attente de signature'}
+                        </span>
+                      </p>
+                    )
+                  }
+                  return (
+                    <p className="text-xs mt-1">
+                      <Link to="/admin/contrats" className="text-amber underline">Créer un contrat pour cette séance</Link>
+                    </p>
+                  )
+                })()}
               </div>
               <div className="flex items-center gap-2 flex-wrap">
                 {!s.date && s.status === 'en_attente' && proposing !== s.id && (
