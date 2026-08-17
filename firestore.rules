@@ -1,0 +1,47 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Laetitia (utilisateur authentifié) a tous les droits.
+    function isAdmin() {
+      return request.auth != null;
+    }
+
+    // Séances : Laetitia gère tout, les clients peuvent seulement CRÉER
+    // une demande de RDV via le formulaire public (pas de lecture/modif).
+    match /sessions/{id} {
+      allow read, update, delete: if isAdmin();
+      allow create: if true;
+    }
+
+    // Devis, factures, contrats : lecture publique nécessaire pour que le
+    // client consulte son propre document via le lien à token (la sécurité
+    // vient de la difficulté à deviner un token uuid, pas de la règle Firestore).
+    // Seule Laetitia peut créer/supprimer. Le client peut mettre à jour
+    // uniquement les champs liés à sa propre action (accepter, signer).
+    match /devis/{id} {
+      allow read: if true;
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() ||
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
+    }
+
+    match /factures/{id} {
+      allow read: if true;
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin();
+    }
+
+    match /contrats/{id} {
+      allow read: if true;
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() ||
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'signature', 'signedAt']);
+    }
+
+    match /availability/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}

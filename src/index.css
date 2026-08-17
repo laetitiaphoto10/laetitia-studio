@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, .font-display {
+  font-family: 'Fraunces', serif;
+}
+
+/* Signature element: sprocket-hole perforation on session/document cards,
+   evoking a strip of film — the one recurring motif across the app. */
+.filmcard {
+  position: relative;
+  background: #F2ECE4;
+  border-radius: 4px;
+  padding: 1.25rem 1.5rem;
+}
+
+.filmcard::before,
+.filmcard::after {
+  content: '';
+  position: absolute;
+  left: 1.25rem;
+  right: 1.25rem;
+  height: 8px;
+  background-image: radial-gradient(circle, #1A1816 2.5px, transparent 2.6px);
+  background-size: 18px 8px;
+  background-repeat: repeat-x;
+  opacity: 0.16;
+}
+
+.filmcard::before { top: 6px; }
+.filmcard::after { bottom: 6px; }
+
+.frame-number {
+  font-family: 'Fraunces', serif;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  color: #C67C3E;
+}
+
+/* Focus visibility, kept simple and consistent app-wide */
+:focus-visible {
+  outline: 2px solid #C67C3E;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
