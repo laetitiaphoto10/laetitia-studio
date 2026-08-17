@@ -8,6 +8,18 @@ export default function ClientBooking() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     await createSession(form)
+    // On tente d'envoyer une notification par email à Laetitia ; si ça échoue,
+    // ça ne doit pas bloquer la confirmation côté client (la demande est
+    // déjà bien enregistrée dans Firestore).
+    try {
+      await fetch('/.netlify/functions/send-notification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form)
+      })
+    } catch (err) {
+      // silencieux : la demande reste visible dans l'admin même sans email
+    }
     setSent(true)
   }
 
