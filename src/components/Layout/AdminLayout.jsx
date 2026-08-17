@@ -4,9 +4,10 @@ import { useAuth } from '../../contexts/AuthContext'
 const NAV = [
   { to: '/admin', label: 'Tableau de bord', frame: '01' },
   { to: '/admin/agenda', label: 'Agenda', frame: '02' },
-  { to: '/admin/devis', label: 'Devis', frame: '03' },
-  { to: '/admin/factures', label: 'Factures', frame: '04' },
-  { to: '/admin/contrats', label: 'Contrats', frame: '05' }
+  { to: '/admin/calendrier', label: 'Calendrier', frame: '03' },
+  { to: '/admin/devis', label: 'Devis', frame: '04' },
+  { to: '/admin/factures', label: 'Factures', frame: '05' },
+  { to: '/admin/contrats', label: 'Contrats', frame: '06' }
 ]
 
 export default function AdminLayout() {
