@@ -71,7 +71,7 @@ export default function ClientMinis() {
         {!choix && Object.entries(parJour).map(([date, list]) => (
           <section key={date} className="mb-6">
             <h2 className="font-display text-xl capitalize mb-2">{jourFr(date)}</h2>
-            {list[0].prix && <p className="text-paper/60 text-sm mb-2">{list[0].label} · {list[0].prix}</p>}
+            <p className="text-amber text-sm mb-2">{list[0].label}{list[0].prix ? ` · ${list[0].prix}` : ''}</p>
             <div className="grid grid-cols-3 gap-2">
               {list.map(c => (
                 <button key={c.id} onClick={() => { setChoix(c); setEtat('') }}
