@@ -42,10 +42,31 @@ export default function Agenda() {
     setProposing(null)
   }
 
+  // Ouvre Gmail avec un mail prêt à envoyer. Si la séance a une date,
+  // le mail est une confirmation avec date, heure et lieu déjà écrits.
   const gmailComposeLink = (s) => {
-    const subject = encodeURIComponent(`Votre séance ${s.type ? '(' + s.type + ')' : ''} — Studio Laetitia Fey`)
-    const body = encodeURIComponent(`Bonjour ${s.clientName},\n\n`)
-    return `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(s.email)}&su=${subject}&body=${body}`
+    let subject
+    let body
+    if (s.date) {
+      const dateFr = new Date(s.date + 'T00:00:00').toLocaleDateString('fr-FR', {
+        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+      })
+      subject = `Confirmation de votre séance ${s.type ? s.type.toLowerCase() : ''} — Studio Laetitia Fey`
+      body = [
+        `Bonjour ${s.clientName},`,
+        '',
+        `Je vous confirme votre séance${s.type ? ' ' + s.type.toLowerCase() : ''} le ${dateFr}${s.time ? ' à ' + s.time : ''}${s.location ? ', lieu : ' + s.location : ''}.`,
+        '',
+        'N\'hésitez pas à me répondre si vous avez la moindre question.',
+        '',
+        'À très bientôt,',
+        'Laetitia Fey'
+      ].join('\n')
+    } else {
+      subject = `Votre séance ${s.type ? '(' + s.type + ')' : ''} — Studio Laetitia Fey`
+      body = `Bonjour ${s.clientName},\n\n`
+    }
+    return `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(s.email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
   }
 
   return (
@@ -131,8 +152,9 @@ export default function Agenda() {
                   </button>
                 )}
                 {s.email && (
-                  <a href={gmailComposeLink(s)} target="_blank" rel="noopener noreferrer" className="text-sm text-amber underline">
-                    Répondre par email
+                  <a href={gmailComposeLink(s)} target="_blank" rel="noopener noreferrer"
+                    className={s.date ? 'text-sm bg-amber text-ink px-3 py-1.5 rounded font-medium' : 'text-sm text-amber underline'}>
+                    {s.date ? 'Envoyer la confirmation' : 'Répondre par email'}
                   </a>
                 )}
                 <select
