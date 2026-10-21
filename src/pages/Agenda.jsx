@@ -27,6 +27,8 @@ export default function Agenda() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    // Gmail doit s'ouvrir tout de suite (avant l'enregistrement), sinon le navigateur le bloque
+    if (form.email) window.open(gmailComposeLink(form), '_blank', 'noopener')
     await createSession({ ...form, status: 'confirme' })
     setForm({ clientName: '', email: '', type: '', date: '', time: '', location: '', notes: '' })
     setShowForm(false)
@@ -37,9 +39,16 @@ export default function Agenda() {
     setProposedDate({ date: s.date || '', time: s.time || '' })
   }
 
-  const confirmProposedDate = async (id) => {
-    await updateSession(id, { date: proposedDate.date, time: proposedDate.time, status: 'confirme' })
+  const confirmProposedDate = async (s) => {
+    const maj = { date: proposedDate.date, time: proposedDate.time }
+    // Ouvre Gmail avec la confirmation prête à envoyer
+    if (s.email && maj.date) window.open(gmailComposeLink({ ...s, ...maj }), '_blank', 'noopener')
+    await updateSession(s.id, { ...maj, status: 'confirme' })
     setProposing(null)
+  }
+
+  const supprimer = (s) => {
+    if (window.confirm(`Supprimer la séance de ${s.clientName} ?`)) deleteSession(s.id)
   }
 
   // Ouvre Gmail avec un mail prêt à envoyer. Si la séance a une date,
@@ -86,7 +95,7 @@ export default function Agenda() {
           <input required placeholder="Nom du client" value={form.clientName}
             onChange={e => setForm({ ...form, clientName: e.target.value })}
             className="px-3 py-2 rounded border border-border" />
-          <input type="email" placeholder="Email" value={form.email}
+          <input type="email" placeholder="Email (pour ouvrir Gmail et confirmer)" value={form.email}
             onChange={e => setForm({ ...form, email: e.target.value })}
             className="px-3 py-2 rounded border border-border" />
           <select required value={form.type}
@@ -166,7 +175,7 @@ export default function Agenda() {
                     <option key={k} value={k}>{v}</option>
                   ))}
                 </select>
-                <button onClick={() => deleteSession(s.id)} className="text-sm text-red-700/70 hover:text-red-700">
+                <button onClick={() => supprimer(s)} className="text-sm text-red-700/70 hover:text-red-700">
                   Supprimer
                 </button>
               </div>
@@ -186,7 +195,7 @@ export default function Agenda() {
                     onChange={e => setProposedDate({ ...proposedDate, time: e.target.value })}
                     className="px-3 py-2 rounded border border-border" />
                 </div>
-                <button onClick={() => confirmProposedDate(s.id)} className="bg-charcoal text-paper px-4 py-2 rounded text-sm">
+                <button onClick={() => confirmProposedDate(s)} className="bg-charcoal text-paper px-4 py-2 rounded text-sm">
                   Valider et confirmer
                 </button>
                 <button onClick={() => setProposing(null)} className="text-sm text-charcoal/60">
