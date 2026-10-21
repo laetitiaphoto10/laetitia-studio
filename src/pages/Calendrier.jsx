@@ -4,8 +4,11 @@ import { listenSessions, listenEvents, createEvent, deleteEvent } from '../lib/d
 const MOIS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
 const JOURS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
 
+// Date locale au format AAAA-MM-JJ (toISOString décalait d'un jour à cause du fuseau horaire)
 function toKey(d) {
-  return d.toISOString().slice(0, 10)
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const j = String(d.getDate()).padStart(2, '0')
+  return `${d.getFullYear()}-${m}-${j}`
 }
 
 export default function Calendrier() {
@@ -48,6 +51,8 @@ export default function Calendrier() {
       map[e.date] = map[e.date] || { sessions: [], events: [] }
       map[e.date].events.push(e)
     })
+    // Séances rangées par heure dans chaque journée
+    Object.values(map).forEach(v => v.sessions.sort((a, b) => (a.time || '').localeCompare(b.time || '')))
     return map
   }, [sessions, events])
 
