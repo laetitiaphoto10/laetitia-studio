@@ -9,8 +9,10 @@ import Clients from './pages/Clients'
 import Devis from './pages/Devis'
 import Factures from './pages/Factures'
 import Contrats from './pages/Contrats'
+import MiniSessions from './pages/MiniSessions'
 import Accueil from './pages/Accueil'
 import ClientBooking from './pages/client/ClientBooking'
+import ClientMinis from './pages/client/ClientMinis'
 import ClientPortal from './pages/client/ClientPortal'
 
 function PrivateRoute({ children }) {
@@ -25,6 +27,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/" element={<Accueil />} />
       <Route path="/reserver" element={<ClientBooking />} />
+      <Route path="/mini-sessions" element={<ClientMinis />} />
       <Route path="/espace/:token" element={<ClientPortal />} />
       <Route path="/login" element={<Login />} />
 
@@ -39,6 +42,7 @@ function AppRoutes() {
         <Route index element={<Dashboard />} />
         <Route path="agenda" element={<Agenda />} />
         <Route path="calendrier" element={<Calendrier />} />
+        <Route path="mini-sessions" element={<MiniSessions />} />
         <Route path="clients" element={<Clients />} />
         <Route path="devis" element={<Devis />} />
         <Route path="factures" element={<Factures />} />
