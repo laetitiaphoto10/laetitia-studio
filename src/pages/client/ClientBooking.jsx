@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { createSession } from '../../lib/data'
 
 const SESSION_TYPES = ['Grossesse', 'Naissance', 'Mariage', 'Couple', 'Autre']
@@ -30,9 +31,10 @@ export default function ClientBooking() {
       <div className="min-h-screen bg-ink flex items-center justify-center p-6">
         <div className="filmcard py-10 max-w-md text-center">
           <h1 className="font-display text-2xl mb-2">Demande envoyée</h1>
-          <p className="text-charcoal/70">
+          <p className="text-charcoal/70 mb-6">
             Merci ! Votre demande de séance a bien été transmise à Laetitia. Elle revient vers vous rapidement pour vous proposer une date.
           </p>
+          <Link to="/" className="text-sm text-amber underline">Retour au site</Link>
         </div>
       </div>
     )
@@ -41,6 +43,13 @@ export default function ClientBooking() {
   return (
     <div className="min-h-screen bg-ink flex items-center justify-center p-6">
       <div className="w-full max-w-lg">
+        <Link to="/" className="text-sm text-paper/60 hover:text-amber">← Retour au site</Link>
+        <img
+          src="/photos/accueil.jpg"
+          alt="Laetitia Fey, photographe"
+          onError={(e) => { e.currentTarget.style.display = 'none' }}
+          className="w-full h-48 md:h-64 object-cover rounded mt-4 mb-6"
+        />
         <h1 className="font-display text-3xl text-paper text-center mb-1">Réserver une séance</h1>
         <p className="text-paper/50 text-center text-sm mb-8">Studio Laetitia Fey — Photographe</p>
         <form onSubmit={handleSubmit} className="filmcard py-8 grid grid-cols-1 md:grid-cols-2 gap-3">
