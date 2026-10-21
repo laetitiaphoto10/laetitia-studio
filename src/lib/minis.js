@@ -56,3 +56,10 @@ export async function libererCreneau(id) {
     tx.update(ref, { booked: false, clientName: '', email: '', phone: '', notes: '', bookedAt: '' })
   })
 }
+
+// Supprime plusieurs créneaux d'un coup (ex : toute une journée de test)
+export async function deleteCreneaux(ids) {
+  const batch = writeBatch(db)
+  ids.forEach(id => batch.delete(doc(db, 'creneaux', id)))
+  await batch.commit()
+}
