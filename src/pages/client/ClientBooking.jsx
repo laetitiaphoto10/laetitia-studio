@@ -34,7 +34,7 @@ export default function ClientBooking() {
     // ça ne doit pas bloquer la confirmation côté client (la demande est
     // déjà bien enregistrée dans Firestore).
     try {
-      await fetch('/.netlify/functions/send-notification', {
+      await fetch('/api/send-notification', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form)
