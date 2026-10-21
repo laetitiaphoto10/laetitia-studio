@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { listenCreneaux, createSerie, deleteCreneau, libererCreneau } from '../lib/minis'
+import { listenCreneaux, createSerie, deleteCreneau, deleteCreneaux, libererCreneau } from '../lib/minis'
 
 const today = () => {
   const d = new Date()
@@ -62,8 +62,13 @@ export default function MiniSessions() {
       {Object.keys(parJour).length === 0 && <p className="text-charcoal/60">Aucun créneau à venir.</p>}
       {Object.entries(parJour).map(([date, list]) => (
         <section key={date} className="mb-6">
-          <h2 className="font-display text-xl capitalize mb-2">{jourFr(date)}
-            <span className="text-sm text-charcoal/60 font-sans ml-2">{list.filter(c => c.booked).length}/{list.length} réservés</span></h2>
+          <h2 className="font-display text-xl capitalize mb-2 flex items-center gap-3 flex-wrap">{jourFr(date)}
+            <span className="text-sm text-charcoal/60 font-sans">{list.filter(c => c.booked).length}/{list.length} réservés</span>
+            <button
+              onClick={() => confirm(`Supprimer les ${list.length} créneaux de cette journée${list.some(c => c.booked) ? ' (certains sont réservés !)' : ''} ?`) && deleteCreneaux(list.map(c => c.id))}
+              className="text-xs text-red-700 underline font-sans normal-case">
+              Supprimer toute la journée
+            </button></h2>
           <div className="space-y-2">
             {list.map(c => (
               <div key={c.id} className={`flex items-center gap-3 flex-wrap border rounded px-3 py-2 ${c.booked ? 'bg-amber/10 border-amber' : 'bg-white border-border'}`}>
