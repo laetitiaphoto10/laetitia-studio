@@ -23,6 +23,7 @@ const NAV = [
   { to: '/admin', label: 'Tableau de bord', icon: 'dashboard' },
   { to: '/admin/agenda', label: 'Agenda', icon: 'agenda' },
   { to: '/admin/calendrier', label: 'Calendrier', icon: 'calendrier' },
+  { to: '/admin/mini-sessions', label: 'Mini-sessions', icon: 'calendrier' },
   { to: '/admin/clients', label: 'Clients', icon: 'clients' },
   { to: '/admin/devis', label: 'Devis', icon: 'devis' },
   { to: '/admin/factures', label: 'Factures', icon: 'factures' },
