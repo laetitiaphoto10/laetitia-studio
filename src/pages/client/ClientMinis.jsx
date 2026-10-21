@@ -28,7 +28,7 @@ export default function ClientMinis() {
       setEtat('pris'); setChoix(null); return
     }
     try {
-      await fetch('/.netlify/functions/send-notification', {
+      await fetch('/api/send-notification', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
