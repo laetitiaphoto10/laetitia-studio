@@ -10,6 +10,7 @@ import Devis from './pages/Devis'
 import Factures from './pages/Factures'
 import Contrats from './pages/Contrats'
 import MiniSessions from './pages/MiniSessions'
+import ImportFotostudio from './pages/ImportFotostudio'
 import Accueil from './pages/Accueil'
 import ClientBooking from './pages/client/ClientBooking'
 import ClientMinis from './pages/client/ClientMinis'
@@ -43,6 +44,7 @@ function AppRoutes() {
         <Route path="agenda" element={<Agenda />} />
         <Route path="calendrier" element={<Calendrier />} />
         <Route path="mini-sessions" element={<MiniSessions />} />
+        <Route path="import-fotostudio" element={<ImportFotostudio />} />
         <Route path="clients" element={<Clients />} />
         <Route path="devis" element={<Devis />} />
         <Route path="factures" element={<Factures />} />
