@@ -5,9 +5,11 @@ import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Agenda from './pages/Agenda'
 import Calendrier from './pages/Calendrier'
+import Clients from './pages/Clients'
 import Devis from './pages/Devis'
 import Factures from './pages/Factures'
 import Contrats from './pages/Contrats'
+import Accueil from './pages/Accueil'
 import ClientBooking from './pages/client/ClientBooking'
 import ClientPortal from './pages/client/ClientPortal'
 
@@ -21,7 +23,7 @@ function PrivateRoute({ children }) {
 function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/reserver" replace />} />
+      <Route path="/" element={<Accueil />} />
       <Route path="/reserver" element={<ClientBooking />} />
       <Route path="/espace/:token" element={<ClientPortal />} />
       <Route path="/login" element={<Login />} />
@@ -37,6 +39,7 @@ function AppRoutes() {
         <Route index element={<Dashboard />} />
         <Route path="agenda" element={<Agenda />} />
         <Route path="calendrier" element={<Calendrier />} />
+        <Route path="clients" element={<Clients />} />
         <Route path="devis" element={<Devis />} />
         <Route path="factures" element={<Factures />} />
         <Route path="contrats" element={<Contrats />} />
