@@ -1,12 +1,27 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { createSession } from '../../lib/data'
+import { listenCreneaux } from '../../lib/minis'
 
 const SESSION_TYPES = ['Grossesse', 'Naissance', 'Mariage', 'Couple', 'Autre']
+
+const aujourdhui = () => {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+const jourFr = (iso) => new Date(iso + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
 
 export default function ClientBooking() {
   const [form, setForm] = useState({ clientName: '', email: '', phone: '', type: '', location: '', notes: '' })
   const [sent, setSent] = useState(false)
+  const [creneaux, setCreneaux] = useState([])
+
+  useEffect(() => listenCreneaux(aujourdhui(), setCreneaux), [])
+
+  // Jours qui ont encore des créneaux libres
+  const jours = Object.entries(
+    creneaux.filter(c => !c.booked).reduce((acc, c) => { acc[c.date] = (acc[c.date] || 0) + 1; return acc }, {})
+  )
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -52,6 +67,20 @@ export default function ClientBooking() {
         />
         <h1 className="font-display text-3xl text-paper text-center mb-1">Réserver une séance</h1>
         <p className="text-paper/50 text-center text-sm mb-8">Studio Laetitia Fey — Photographe</p>
+        {jours.length > 0 && (
+          <div className="border border-amber/60 rounded p-4 mb-6 text-paper">
+            <p className="font-display text-lg text-amber mb-1">Mini-séances disponibles</p>
+            <ul className="text-sm text-paper/80 mb-3">
+              {jours.slice(0, 4).map(([date, n]) => (
+                <li key={date} className="capitalize">{jourFr(date)} · {n} créneau{n > 1 ? 'x' : ''} libre{n > 1 ? 's' : ''}</li>
+              ))}
+            </ul>
+            <Link to="/mini-sessions" className="inline-block bg-amber text-ink font-medium px-4 py-2 rounded text-sm">
+              Choisir un créneau
+            </Link>
+          </div>
+        )}
+        <p className="text-paper/50 text-center text-xs mb-3">Ou envoyez une demande pour une séance classique :</p>
         <form onSubmit={handleSubmit} className="filmcard py-8 grid grid-cols-1 md:grid-cols-2 gap-3">
           <input required placeholder="Votre nom" value={form.clientName}
             onChange={e => setForm({ ...form, clientName: e.target.value })}
