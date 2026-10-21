@@ -20,7 +20,11 @@ export default function ClientBooking() {
 
   // Jours qui ont encore des créneaux libres
   const jours = Object.entries(
-    creneaux.filter(c => !c.booked).reduce((acc, c) => { acc[c.date] = (acc[c.date] || 0) + 1; return acc }, {})
+    creneaux.filter(c => !c.booked).reduce((acc, c) => {
+      acc[c.date] = acc[c.date] || { n: 0, label: c.label }
+      acc[c.date].n++
+      return acc
+    }, {})
   )
 
   const handleSubmit = async (e) => {
@@ -71,8 +75,11 @@ export default function ClientBooking() {
           <div className="border border-amber/60 rounded p-4 mb-6 text-paper">
             <p className="font-display text-lg text-amber mb-1">Mini-séances disponibles</p>
             <ul className="text-sm text-paper/80 mb-3">
-              {jours.slice(0, 4).map(([date, n]) => (
-                <li key={date} className="capitalize">{jourFr(date)} · {n} créneau{n > 1 ? 'x' : ''} libre{n > 1 ? 's' : ''}</li>
+              {jours.slice(0, 4).map(([date, info]) => (
+                <li key={date} className="mb-1">
+                  <span className="text-paper font-medium">{info.label}</span>
+                  <span className="capitalize"> · {jourFr(date)} · {info.n} créneau{info.n > 1 ? 'x' : ''} libre{info.n > 1 ? 's' : ''}</span>
+                </li>
               ))}
             </ul>
             <Link to="/mini-sessions" className="inline-block bg-amber text-ink font-medium px-4 py-2 rounded text-sm">
