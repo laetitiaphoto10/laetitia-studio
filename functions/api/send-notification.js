@@ -1,39 +1,51 @@
-// Fonction Cloudflare Pages : envoie un email à Laetitia à chaque nouvelle demande
-const esc = (t) => String(t ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+const esc = (v) =>
+  String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
 
 export async function onRequestPost({ request, env }) {
   try {
     const d = await request.json()
-    const lien = `${new URL(request.url).origin}/admin/agenda`
+    const origin = new URL(request.url).origin
+    const isContrat = d.kind === 'contrat'
 
-    const html = `
-      <h2>Nouvelle demande de séance</h2>
-      <p><strong>${esc(d.clientName)}</strong></p>
-      <p>Type : ${esc(d.type)}<br>
-         Email : ${esc(d.email)}<br>
-         Téléphone : ${esc(d.phone)}<br>
-         Lieu : ${esc(d.location)}</p>
-      <p>Message : ${esc(d.notes)}</p>
-      <p><a href="${lien}">Ouvrir mon agenda</a></p>`
+    const subject = isContrat
+      ? `Contrat signé — ${d.clientName || 'client'}`
+      : `Nouvelle demande de séance — ${d.clientName || 'client'}`
 
-    const r = await fetch('https://api.resend.com/emails', {
+    const rows = isContrat
+      ? [['Client', d.clientName], ['Signé le', d.signedAt]]
+      : [
+          ['Client', d.clientName],
+          ['Email', d.email || 'non renseigné'],
+          ['Téléphone', d.phone || 'non renseigné'],
+          ['Séance', d.type],
+          ['Date souhaitée', `${d.date || ''}${d.time ? ' à ' + d.time : ''}`],
+          ['Lieu', d.location || 'non renseigné'],
+          ['Notes', d.notes || 'aucune']
+        ]
+
+    const link = isContrat ? `${origin}/admin/contrats` : `${origin}/admin/agenda`
+    const title = isContrat ? 'Un client vient de signer son contrat' : 'Nouvelle demande de séance'
+
+    const html =
+      `<h2>${esc(title)}</h2>` +
+      rows.map(([k, v]) => `<p><b>${esc(k)} :</b> ${esc(v)}</p>`).join('') +
+      (isContrat && d.content ? `<hr><p><b>Copie du contrat :</b></p><pre style="white-space:pre-wrap;font-family:inherit">${esc(d.content)}</pre>` : '') +
+      `<p><a href="${link}">Ouvrir l'espace pro</a></p>`
+
+    const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${env.RESEND_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
+      headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         from: 'Studio Laetitia Fey <onboarding@resend.dev>',
         to: [env.NOTIFY_EMAIL],
-        subject: `Nouvelle demande : ${d.clientName || 'client'} (${d.type || 'séance'})`,
+        subject,
         html
       })
     })
-    return new Response(JSON.stringify({ ok: r.ok }), {
-      status: r.ok ? 200 : 502,
-      headers: { 'Content-Type': 'application/json' }
-    })
-  } catch (e) {
-    return new Response(JSON.stringify({ ok: false }), { status: 500, headers: { 'Content-Type': 'application/json' } })
+
+    if (!res.ok) return new Response(await res.text(), { status: 500 })
+    return new Response(JSON.stringify({ success: true }), { headers: { 'Content-Type': 'application/json' } })
+  } catch (err) {
+    return new Response(err.message, { status: 500 })
   }
 }
