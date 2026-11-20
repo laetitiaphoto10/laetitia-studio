@@ -1,150 +1,172 @@
-import { useEffect, useMemo, useState } from 'react'
-import { listenSessions, listenDevis, listenFactures, listenContrats } from '../lib/data'
+import { useEffect, useRef, useState } from 'react'
+import { useParams } from 'react-router-dom'
+import SignatureCanvas from 'react-signature-canvas'
+import { getDocByToken, updateDevis, updateContrat } from '../../lib/data'
 
-const STATUTS = {
-  en_attente: 'En attente', confirme: 'Confirmée', annule: 'Annulée', termine: 'Terminée',
-  envoye: 'Envoyé', accepte: 'Accepté', refuse: 'Refusé', brouillon: 'Brouillon',
-  impayee: 'Impayée', payee: 'Payée', en_retard: 'En retard', signe: 'Signé'
-}
-
-const clientKey = (x) => (x.email || x.clientName || '').toLowerCase().trim()
-const fmtDate = (ts) => ts?.toDate?.().toLocaleDateString?.('fr-FR') || ''
-
-export default function Clients() {
-  const [sessions, setSessions] = useState([])
-  const [devis, setDevis] = useState([])
-  const [factures, setFactures] = useState([])
-  const [contrats, setContrats] = useState([])
-  const [recherche, setRecherche] = useState('')
-  const [selected, setSelected] = useState(null)
+export default function ClientPortal() {
+  const { token } = useParams()
+  const [devis, setDevis] = useState(undefined)
+  const [facture, setFacture] = useState(undefined)
+  const [contrat, setContrat] = useState(undefined)
+  const sigRef = useRef(null)
 
   useEffect(() => {
-    const u1 = listenSessions(setSessions)
-    const u2 = listenDevis(setDevis)
-    const u3 = listenFactures(setFactures)
-    const u4 = listenContrats(setContrats)
-    return () => { u1(); u2(); u3(); u4() }
-  }, [])
+    (async () => {
+      setDevis(await getDocByToken('devis', token))
+      setFacture(await getDocByToken('factures', token))
+      setContrat(await getDocByToken('contrats', token))
+    })()
+  }, [token])
 
-  // Les clients sont reconstitués automatiquement à partir de tout ce qui existe déjà
-  const clients = useMemo(() => {
-    const map = {}
-    const get = (x) => {
-      const key = clientKey(x)
-      if (!key) return null
-      if (!map[key]) map[key] = { key, name: x.clientName, email: x.email || '', phone: '', sessions: [], devis: [], factures: [], contrats: [] }
-      const c = map[key]
-      if (!c.email && x.email) c.email = x.email
-      if (!c.name && x.clientName) c.name = x.clientName
-      if (!c.phone && x.phone) c.phone = x.phone
-      return c
-    }
-    sessions.forEach(s => get(s)?.sessions.push(s))
-    devis.forEach(d => get(d)?.devis.push(d))
-    factures.forEach(f => get(f)?.factures.push(f))
-    contrats.forEach(c => get(c)?.contrats.push(c))
-    return Object.values(map).sort((a, b) => (a.name || '').localeCompare(b.name || ''))
-  }, [sessions, devis, factures, contrats])
+  const loaded = devis !== undefined && facture !== undefined && contrat !== undefined
+  const nothingFound = loaded && !devis && !facture && !contrat
 
-  const filtres = clients.filter(c =>
-    (c.name + ' ' + c.email).toLowerCase().includes(recherche.toLowerCase())
-  )
+  const acceptDevis = async (accepted) => {
+    await updateDevis(devis.id, { status: accepted ? 'accepte' : 'refuse' })
+    setDevis({ ...devis, status: accepted ? 'accepte' : 'refuse' })
+  }
 
-  const client = selected ? clients.find(c => c.key === selected) : null
+  const signContrat = async () => {
+    if (sigRef.current.isEmpty()) return
+    const signature = sigRef.current.getCanvas().toDataURL('image/png')
+    const signedAt = new Date().toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })
+    await updateContrat(contrat.id, { signature, signedAt, status: 'signe' })
+    setContrat({ ...contrat, signature, signedAt, status: 'signe' })
+    // Prévient Laetitia par email (silencieux si ça échoue)
+    try {
+      await fetch('/api/send-notification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          kind: 'contrat',
+          clientName: contrat.clientName || contrat.client || devis?.clientName || 'Client',
+          signedAt,
+          content: contrat.content
+        })
+      })
+    } catch (err) {}
+  }
 
-  if (client) return <Fiche client={client} onBack={() => setSelected(null)} />
+  if (!loaded) {
+    return <div className="min-h-screen bg-ink flex items-center justify-center text-paper">Chargement...</div>
+  }
 
-  return (
-    <div>
-      <h2 className="font-display text-2xl mb-6">Clients</h2>
-      <input
-        placeholder="Rechercher un client (nom ou email)"
-        value={recherche}
-        onChange={e => setRecherche(e.target.value)}
-        className="w-full px-3 py-2 rounded border border-border mb-4 bg-white"
-      />
-      <div className="space-y-3">
-        {filtres.map(c => (
-          <button key={c.key} onClick={() => setSelected(c.key)}
-            className="filmcard py-4 w-full text-left flex items-center justify-between gap-3">
-            <div>
-              <p className="font-medium">{c.name}</p>
-              <p className="text-sm text-charcoal/70">{c.email || 'pas d\'email'}</p>
-            </div>
-            <p className="text-xs text-charcoal/60 text-right">
-              {c.sessions.length} séance(s)<br />{c.factures.length} facture(s)
-            </p>
-          </button>
-        ))}
-        {filtres.length === 0 && <p className="text-charcoal/60 text-sm">Aucun client pour l'instant. Ils apparaissent automatiquement dès qu'une demande, un devis, une facture ou un contrat est créé.</p>}
-      </div>
-    </div>
-  )
-}
-
-function Fiche({ client, onBack }) {
-  const facture = client.factures.reduce((s, f) => s + (f.total || 0), 0)
-  const impaye = client.factures
-    .filter(f => f.status !== 'payee')
-    .reduce((s, f) => s + (f.total || 0), 0)
-
-  const gmail = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(client.email)}&su=${encodeURIComponent('Studio Laetitia Fey')}&body=${encodeURIComponent(`Bonjour ${client.name},\n\n`)}`
-
-  return (
-    <div>
-      <button onClick={onBack} className="text-sm text-amber mb-4">← Tous les clients</button>
-      <h2 className="font-display text-2xl mb-1">{client.name}</h2>
-      <div className="flex flex-wrap gap-4 text-sm mb-6">
-        {client.email && <a href={gmail} target="_blank" rel="noopener noreferrer" className="text-amber underline">{client.email}</a>}
-        {client.phone && <a href={`tel:${client.phone}`} className="text-amber underline">{client.phone}</a>}
-      </div>
-
-      <div className="grid grid-cols-2 gap-4 mb-8">
-        <div className="filmcard py-5">
-          <p className="text-sm text-charcoal/60">Total facturé</p>
-          <p className="font-display text-2xl mt-1">{facture.toFixed(2)} €</p>
-        </div>
-        <div className="filmcard py-5">
-          <p className="text-sm text-charcoal/60">Reste à payer</p>
-          <p className="font-display text-2xl mt-1">{impaye.toFixed(2)} €</p>
+  if (nothingFound) {
+    return (
+      <div className="min-h-screen bg-ink flex items-center justify-center p-6">
+        <div className="filmcard py-10 max-w-md text-center">
+          <h1 className="font-display text-xl mb-2">Lien introuvable</h1>
+          <p className="text-charcoal/70 text-sm">Ce lien n'est plus valide. Contactez Laetitia pour un nouveau lien.</p>
         </div>
       </div>
+    )
+  }
 
-      <Bloc titre="Séances" vide="Aucune séance." items={client.sessions.map(s => ({
-        id: s.id,
-        titre: `${s.type || 'Séance'}${s.date ? ' — ' + s.date : ''}${s.time ? ' à ' + s.time : ''}`,
-        detail: [s.location, s.notes].filter(Boolean).join(' · '),
-        statut: STATUTS[s.status]
-      }))} />
-      <Bloc titre="Devis" vide="Aucun devis." items={client.devis.map(d => ({
-        id: d.id, titre: `${d.total} €`, detail: fmtDate(d.createdAt), statut: STATUTS[d.status]
-      }))} />
-      <Bloc titre="Factures" vide="Aucune facture." items={client.factures.map(f => ({
-        id: f.id, titre: `${f.total} €`, detail: f.dueDate ? 'échéance ' + f.dueDate : fmtDate(f.createdAt), statut: STATUTS[f.status]
-      }))} />
-      <Bloc titre="Contrats" vide="Aucun contrat." items={client.contrats.map(c => ({
-        id: c.id, titre: c.status === 'signe' ? 'Contrat signé' : 'Contrat à signer', detail: c.signedAt ? 'signé le ' + c.signedAt : fmtDate(c.createdAt), statut: STATUTS[c.status]
-      }))} />
-    </div>
-  )
-}
-
-function Bloc({ titre, items, vide }) {
   return (
-    <div className="mb-6">
-      <h3 className="font-display text-lg mb-2">{titre}</h3>
-      {items.length === 0 && <p className="text-charcoal/60 text-sm">{vide}</p>}
-      <div className="space-y-2">
-        {items.map(i => (
-          <div key={i.id} className="bg-white border border-border rounded px-4 py-3 flex items-center justify-between gap-3">
-            <div>
-              <p className="text-sm font-medium">{i.titre}</p>
-              {i.detail && <p className="text-xs text-charcoal/60 mt-0.5">{i.detail}</p>}
-            </div>
-            <span className="text-xs text-amber whitespace-nowrap">{i.statut}</span>
+    <div className="min-h-screen bg-ink p-6">
+      <div className="max-w-xl mx-auto space-y-6 py-8">
+        <h1 className="font-display text-2xl text-paper text-center mb-2">Votre espace — Studio Laetitia Fey</h1>
+
+        {devis && (
+          <div className="filmcard py-6">
+            <h2 className="font-display text-lg mb-3">Devis</h2>
+            <ul className="text-sm mb-3 space-y-1">
+              {devis.items?.map((it, i) => (
+                <li key={i} className="flex justify-between">
+                  <span>{it.label}</span><span>{it.price} €</span>
+                </li>
+              ))}
+            </ul>
+            <p className="text-right font-display text-xl mb-4">Total : {devis.total?.toFixed?.(2)} €</p>
+            {devis.status === 'envoye' ? (
+              <div className="flex gap-3">
+                <button onClick={() => acceptDevis(true)} className="flex-1 bg-amber text-ink py-2 rounded text-sm font-medium">
+                  Accepter le devis
+                </button>
+                <button onClick={() => acceptDevis(false)} className="flex-1 border border-charcoal py-2 rounded text-sm">
+                  Refuser
+                </button>
+              </div>
+            ) : (
+              <p className={`text-sm font-medium ${devis.status === 'accepte' ? 'text-green-700' : 'text-red-700'}`}>
+                {devis.status === 'accepte' ? 'Devis accepté, merci !' : 'Devis refusé'}
+              </p>
+            )}
           </div>
-        ))}
+        )}
+
+        {contrat && (
+          <div className="filmcard py-6">
+            <h2 className="font-display text-lg mb-3 flex items-center gap-2">
+              Contrat
+              <span className={`inline-block w-3 h-3 rounded-full ${contrat.status === 'signe' ? 'bg-green-600' : 'bg-red-600'}`} />
+              <span className={`text-sm ${contrat.status === 'signe' ? 'text-green-700' : 'text-red-700'}`}>
+                {contrat.status === 'signe' ? 'Signé' : 'À signer'}
+              </span>
+            </h2>
+            <p className="text-sm whitespace-pre-wrap mb-4 max-h-64 overflow-y-auto border border-border rounded p-3 bg-white">
+              {contrat.content}
+            </p>
+            {contrat.status === 'signe' ? (
+              <div>
+                <p className="text-sm text-green-700 font-medium mb-2">Signé le {contrat.signedAt}</p>
+                <img src={contrat.signature} alt="Votre signature" className="h-16 border border-border rounded bg-white mb-4" />
+                <button onClick={() => window.print()} className="w-full bg-amber text-ink py-2 rounded text-sm font-medium">
+                  Télécharger mon exemplaire (PDF)
+                </button>
+                <p className="text-xs text-charcoal/60 mt-2">
+                  Dans la fenêtre qui s'ouvre, choisissez « Enregistrer au format PDF ». Vous pouvez aussi garder ce lien : votre contrat signé y restera disponible.
+                </p>
+              </div>
+            ) : (
+              <div>
+                <p className="text-sm text-charcoal/70 mb-2">Signez ci-dessous pour valider le contrat :</p>
+                <div className="border border-border rounded bg-white mb-3">
+                  <SignatureCanvas ref={sigRef} penColor="#1A1816" canvasProps={{ className: 'w-full h-32' }} />
+                </div>
+                <div className="flex gap-3">
+                  <button onClick={signContrat} className="flex-1 bg-amber text-ink py-2 rounded text-sm font-medium">
+                    Valider ma signature
+                  </button>
+                  <button onClick={() => sigRef.current.clear()} className="border border-charcoal px-4 py-2 rounded text-sm">
+                    Effacer
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {facture && (
+          <div className="filmcard py-6">
+            <h2 className="font-display text-lg mb-3">Facture</h2>
+            <p className="font-display text-xl mb-1">{facture.total?.toFixed?.(2)} €</p>
+            {facture.dueDate && <p className="text-sm text-charcoal/70 mb-2">Échéance : {facture.dueDate}</p>}
+            <p className={`text-sm font-medium ${facture.status === 'payee' ? 'text-green-700' : 'text-amber'}`}>
+              {facture.status === 'payee' ? 'Payée — merci !' : 'En attente de paiement'}
+            </p>
+          </div>
+        )}
       </div>
+
+      {contrat && contrat.status === 'signe' && (
+        <div id="contrat-print" className="print-only">
+          <h1 style={{ fontSize: 22, marginBottom: 4 }}>Contrat de prestation — Studio Laetitia Fey</h1>
+          <p style={{ marginBottom: 16 }}>Signé le {contrat.signedAt}</p>
+          <p style={{ whiteSpace: 'pre-wrap', fontSize: 13, lineHeight: 1.5 }}>{contrat.content}</p>
+          <p style={{ marginTop: 24, fontSize: 13 }}>Signature du client :</p>
+          <img src={contrat.signature} alt="Signature" style={{ height: 80 }} />
+        </div>
+      )}
+
+      <style>{`
+        .print-only { display: none; }
+        @media print {
+          body * { visibility: hidden; }
+          #contrat-print, #contrat-print * { visibility: visible; }
+          #contrat-print { display: block; position: absolute; left: 0; top: 0; width: 100%; padding: 24px; color: #000; background: #fff; }
+        }
+      `}</style>
     </div>
   )
 }
