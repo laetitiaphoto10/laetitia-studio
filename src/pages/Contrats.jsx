@@ -56,7 +56,7 @@ export default function Contrats() {
       gmail(
         c.email,
         'Votre contrat signé — Laetitia Fey Photography',
-        `Bonjour ${c.clientName},\n\nMerci d'avoir signé votre contrat. Vous pouvez retrouver et télécharger votre exemplaire signé (PDF) à tout moment ici :\n${link(c)}\n\nÀ très bientôt,\nLaetitia Fey`
+        `Bonjour ${c.clientName},\n\nVeuillez trouver ci-dessous le lien vers votre contrat signé. Vous pouvez le consulter et télécharger votre exemplaire (PDF) à tout moment :\n${link(c)}\n\nMerci pour votre confiance et à très bientôt,\nLaetitia Fey`
       ),
       '_blank'
     )
